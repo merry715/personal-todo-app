@@ -5,6 +5,33 @@ const CATEGORY_LABELS  = { work: '업무', personal: '개인', study: '공부' }
 let todos         = [];
 let currentFilter = 'all';
 
+// 날짜를 'YYYY년 M월 D일 요일' 형식으로 반환
+function formatDate(date) {
+  const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${days[date.getDay()]}`;
+}
+
+// 대시보드 진행률 갱신 — 필터와 무관하게 항상 전체 todos 기준
+function renderDashboard() {
+  const total      = todos.length;
+  const done       = todos.filter(t => t.completed).length;
+  const overallPct = total === 0 ? 0 : Math.round((done / total) * 100);
+
+  document.getElementById('overall-count').textContent = `${done} / ${total}`;
+  document.getElementById('overall-pct').textContent   = `${overallPct}%`;
+  document.getElementById('overall-bar').style.width   = `${overallPct}%`;
+
+  VALID_CATEGORIES.forEach(cat => {
+    const catTodos = todos.filter(t => t.category === cat);
+    const catTotal  = catTodos.length;
+    const catDone   = catTodos.filter(t => t.completed).length;
+    const catPct    = catTotal === 0 ? 0 : Math.round((catDone / catTotal) * 100);
+
+    document.getElementById(`count-${cat}`).textContent = `${catDone} / ${catTotal}`;
+    document.getElementById(`bar-${cat}`).style.width   = `${catPct}%`;
+  });
+}
+
 // localStorage에서 할 일 목록 불러오기 (손상 시 빈 배열로 복구)
 function loadTodos() {
   try {
@@ -46,6 +73,7 @@ function renderTodos() {
     : todos.filter(t => t.category === currentFilter);
 
   list.innerHTML = '';
+  renderDashboard(); // 필터·빈 목록 여부와 무관하게 항상 갱신
 
   if (filtered.length === 0) {
     // 전체 목록이 비어 있는 경우와 필터 결과가 없는 경우를 구분
@@ -188,6 +216,8 @@ function init() {
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.addEventListener('click', () => setFilter(tab.dataset.filter));
   });
+
+  document.getElementById('today-date').textContent = formatDate(new Date());
 
   loadTodos();
   renderTodos();

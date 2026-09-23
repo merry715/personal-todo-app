@@ -32,6 +32,11 @@
   --cat-personal-text: #15803d;
   --cat-study-bg:      #ffedd5;
   --cat-study-text:    #c2410c;
+
+  /* 카테고리 진행률 막대 */
+  --cat-work-fill:     #3b82f6;
+  --cat-personal-fill: #22c55e;
+  --cat-study-fill:    #f97316;
 }
 
 body {
@@ -48,10 +53,10 @@ body {
   margin: 0 auto;
 }
 
-/* 헤더 */
+/* ── 헤더 ── */
 header {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 20px;
 }
 
 header h1 {
@@ -59,6 +64,110 @@ header h1 {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-main);
+}
+
+.today-date {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: var(--text-sub);
+}
+
+/* ── 대시보드 카드 ── */
+.dashboard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 전체 진행률 헤더 행 */
+.overall-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.overall-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.progress-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 0.8125rem;
+  color: var(--text-sub);
+}
+
+.progress-meta strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.meta-sep {
+  color: var(--border);
+}
+
+/* 진행률 트랙 */
+.progress-track {
+  height: 8px;
+  background: var(--filter-bg);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progress-track.mini {
+  height: 5px;
+  margin-top: 6px;
+}
+
+/* 진행률 막대 채우기 — transition으로 부드러운 전환 */
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#overall-bar   { background: var(--primary); }
+.work-fill     { background: var(--cat-work-fill); }
+.personal-fill { background: var(--cat-personal-fill); }
+.study-fill    { background: var(--cat-study-fill); }
+
+/* 카테고리별 미니 통계 (3열 그리드) */
+.category-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.category-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cat-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.cat-work-name     { color: var(--cat-work-text); }
+.cat-personal-name { color: var(--cat-personal-text); }
+.cat-study-name    { color: var(--cat-study-text); }
+
+.cat-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── 입력 영역 ── */
@@ -82,7 +191,7 @@ header h1 {
   transition: border-color 0.15s;
 }
 
-#todo-input:focus { border-color: var(--primary); }
+#todo-input:focus       { border-color: var(--primary); }
 #todo-input::placeholder { color: var(--text-muted); }
 
 /* 카테고리 드롭다운 */
