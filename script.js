@@ -5,7 +5,8 @@ let todos         = [];
 let currentFilter = 'all';
 let currentSort   = 'newest'; // 'newest' | 'oldest' | 'incomplete'
 
-// 날짜를 'YYYY년 M월 D일 요일' 형식으로 반환
+// ── 유틸리티 ─────────────────────────────────────────────
+
 function formatDate(date) {
   const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
   return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${days[date.getDay()]}`;
@@ -13,49 +14,47 @@ function formatDate(date) {
 
 // ── 테마 ─────────────────────────────────────────────────
 
-// 테마를 <html> 요소에 적용하고 localStorage에 저장
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   try { localStorage.setItem('theme', theme); } catch {}
 }
 
 function loadTheme() {
-  const saved = localStorage.getItem('theme');
-  applyTheme(saved === 'dark' ? 'dark' : 'light');
+  applyTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
 }
 
 function toggleTheme() {
-  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
+  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
 }
 
 // ── localStorage ─────────────────────────────────────────
 
-// 할 일 목록 불러오기 (손상 시 빈 배열로 복구, category 정규화)
 function loadTodos() {
   try {
     const raw    = localStorage.getItem('todos');
     const parsed = raw ? JSON.parse(raw) : [];
     todos = Array.isArray(parsed) ? parsed : [];
-    todos = todos.map(todo => ({
-      ...todo,
-      category: VALID_CATEGORIES.includes(todo.category) ? todo.category : 'personal',
-    }));
+    todos = todos.map(normalizeTodo);
   } catch {
     todos = [];
   }
 }
 
-// 현재 todos를 localStorage에 즉시 저장
 function saveTodos() {
-  try {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  } catch {}
+  try { localStorage.setItem('todos', JSON.stringify(todos)); } catch {}
+}
+
+// 유효하지 않은 category 값을 'personal'로 정규화
+function normalizeTodo(todo) {
+  return {
+    ...todo,
+    category: VALID_CATEGORIES.includes(todo.category) ? todo.category : 'personal',
+  };
 }
 
 // ── 정렬 ─────────────────────────────────────────────────
 
-// 현재 정렬 기준으로 배열 복사본을 반환 (원본 배열 불변)
+// 원본 배열을 변경하지 않고 정렬된 복사본 반환
 function getSorted(arr) {
   const copy = [...arr];
   switch (currentSort) {
@@ -64,7 +63,7 @@ function getSorted(arr) {
     case 'incomplete':
       return copy.sort((a, b) => {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
-        return Number(b.id) - Number(a.id); // 같은 상태면 최신순
+        return Number(b.id) - Number(a.id);
       });
     default: // 'newest'
       return copy.sort((a, b) => Number(b.id) - Number(a.id));
@@ -73,7 +72,7 @@ function getSorted(arr) {
 
 // ── 대시보드 ──────────────────────────────────────────────
 
-// 필터·정렬과 무관하게 항상 전체 todos 기준으로 계산
+// 필터·정렬에 무관하게 항상 전체 todos 기준으로 계산
 function renderDashboard() {
   const total      = todos.length;
   const done       = todos.filter(t => t.completed).length;
@@ -82,6 +81,9 @@ function renderDashboard() {
   document.getElementById('overall-count').textContent = `${done} / ${total}`;
   document.getElementById('overall-pct').textContent   = `${overallPct}%`;
   document.getElementById('overall-bar').style.width   = `${overallPct}%`;
+
+  const progressTrack = document.querySelector('.progress-track[role="progressbar"]');
+  if (progressTrack) progressTrack.setAttribute('aria-valuenow', overallPct);
 
   VALID_CATEGORIES.forEach(cat => {
     const catTodos  = todos.filter(t => t.category === cat);
@@ -101,12 +103,13 @@ function renderTodos() {
   const empty    = document.getElementById('empty-message');
   const clearBtn = document.getElementById('clear-completed-btn');
 
-  // 필터 탭 활성 상태 반영
+  // 필터 탭 활성 상태 및 aria-selected 갱신
   document.querySelectorAll('.filter-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.filter === currentFilter);
+    const active = tab.dataset.filter === currentFilter;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
   });
 
-  // 필터 적용 후 정렬
   const filtered = currentFilter === 'all'
     ? todos
     : todos.filter(t => t.category === currentFilter);
@@ -115,7 +118,7 @@ function renderTodos() {
   list.innerHTML = '';
   renderDashboard();
 
-  // 완료 항목이 있을 때만 삭제 버튼 활성화 (필터와 무관하게 전체 기준)
+  // 완료 항목 유무에 따라 삭제 버튼 활성화 (전체 todos 기준)
   clearBtn.disabled = !todos.some(t => t.completed);
 
   if (sorted.length === 0) {
@@ -127,7 +130,11 @@ function renderTodos() {
   }
 
   empty.style.display = 'none';
-  sorted.forEach(todo => list.appendChild(createTodoElement(todo)));
+
+  // DocumentFragment로 DOM 조작 최소화 (200개 항목에서도 빠른 렌더링)
+  const frag = document.createDocumentFragment();
+  sorted.forEach(todo => frag.appendChild(createTodoElement(todo)));
+  list.appendChild(frag);
 }
 
 // 단일 할 일 항목 DOM 요소 생성
@@ -135,29 +142,35 @@ function createTodoElement(todo) {
   const li = document.createElement('li');
   li.className = 'todo-item' + (todo.completed ? ' completed' : '');
 
-  // 체크박스: 완료 상태 토글
-  const checkbox     = document.createElement('input');
+  const checkbox = document.createElement('input');
   checkbox.type      = 'checkbox';
   checkbox.className = 'todo-checkbox';
   checkbox.checked   = todo.completed;
+  checkbox.setAttribute('aria-label', `완료 표시: ${todo.text}`);
   checkbox.addEventListener('change', () => toggleTodo(todo.id));
 
-  // 카테고리 배지
-  const badge       = document.createElement('span');
+  const badge = document.createElement('span');
   badge.className   = `category-badge cat-${todo.category}`;
   badge.textContent = CATEGORY_LABELS[todo.category];
 
-  // 할 일 텍스트: 더블클릭으로 수정 모드 진입
-  const span       = document.createElement('span');
+  const span = document.createElement('span');
   span.className   = 'todo-text';
   span.textContent = todo.text;
-  span.title       = '더블클릭하여 수정';
+  span.title       = '더블클릭 또는 Enter로 수정';
+  span.tabIndex    = 0; // 키보드 포커스 가능
   span.addEventListener('dblclick', () => enterEditMode(li, todo, span));
+  // Enter / F2 키로도 수정 모드 진입 (키보드 전용 사용자 지원)
+  span.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === 'F2') {
+      e.preventDefault();
+      enterEditMode(li, todo, span);
+    }
+  });
 
-  // 삭제 버튼
-  const deleteBtn       = document.createElement('button');
+  const deleteBtn = document.createElement('button');
   deleteBtn.className   = 'delete-btn';
   deleteBtn.textContent = '삭제';
+  deleteBtn.setAttribute('aria-label', `삭제: ${todo.text}`);
   deleteBtn.addEventListener('click', () => deleteTodo(todo.id));
 
   li.appendChild(checkbox);
@@ -168,12 +181,13 @@ function createTodoElement(todo) {
   return li;
 }
 
-// 수정 모드 진입: 텍스트 span을 숨기고 input을 삽입
+// 수정 모드: 텍스트 span을 숨기고 input 삽입
 function enterEditMode(li, todo, span) {
   const input     = document.createElement('input');
   input.type      = 'text';
   input.className = 'edit-input';
   input.value     = todo.text;
+  input.setAttribute('aria-label', '할 일 수정');
 
   span.style.display = 'none';
   li.insertBefore(input, span);
@@ -194,8 +208,7 @@ function enterEditMode(li, todo, span) {
     }
   });
 
-  // 포커스 이탈 시 수정 취소
-  // Enter/Esc로 이미 renderTodos()가 호출되면 input은 DOM에서 제거되므로 중복 실행되지 않음
+  // Enter/Esc 후 renderTodos()가 input을 DOM에서 제거하므로 중복 실행 안 됨
   input.addEventListener('blur', () => {
     if (document.body.contains(input)) renderTodos();
   });
@@ -239,7 +252,6 @@ function deleteTodo(id) {
   renderTodos();
 }
 
-// 완료 항목 일괄 삭제 (실행 전 확인)
 function clearCompleted() {
   if (!confirm('완료된 항목을 모두 삭제할까요?')) return;
   todos = todos.filter(t => !t.completed);
@@ -257,15 +269,71 @@ function setSort(sort) {
   renderTodos();
 }
 
+// ── 내보내기 / 가져오기 ───────────────────────────────────
+
+function exportTodos() {
+  const d   = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const filename = `todos-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
+
+  const blob = new Blob([JSON.stringify(todos, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importTodos(file) {
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    let parsed;
+
+    try {
+      parsed = JSON.parse(e.target.result);
+    } catch {
+      alert('파일을 읽을 수 없습니다. 올바른 JSON 형식인지 확인해 주세요.');
+      return;
+    }
+
+    if (!Array.isArray(parsed)) {
+      alert('가져오기 실패: 파일 최상위가 배열이어야 합니다.');
+      return;
+    }
+
+    const REQUIRED = ['id', 'text', 'category', 'completed', 'createdAt'];
+    const badItem  = parsed.find(
+      item => !item || typeof item !== 'object' || !REQUIRED.every(k => k in item)
+    );
+
+    if (badItem) {
+      alert('가져오기 실패: 일부 항목에 필수 필드(id·text·category·completed·createdAt)가 없습니다.');
+      return;
+    }
+
+    if (!confirm(`${parsed.length}개의 할 일을 가져옵니다.\n현재 목록(${todos.length}개)을 덮어씁니다. 계속하시겠습니까?`)) return;
+
+    todos = parsed.map(normalizeTodo);
+    saveTodos();
+    renderTodos();
+  };
+
+  reader.onerror = () => alert('파일을 읽는 중 오류가 발생했습니다.');
+  reader.readAsText(file);
+}
+
 // ── 초기화 ───────────────────────────────────────────────
 
 function init() {
-  const inputEl = document.getElementById('todo-input');
+  const inputEl     = document.getElementById('todo-input');
+  const importInput = document.getElementById('import-input');
 
   document.getElementById('add-btn').addEventListener('click', addTodo);
-  inputEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') addTodo();
-  });
+  inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTodo(); });
 
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.addEventListener('click', () => setFilter(tab.dataset.filter));
@@ -275,18 +343,24 @@ function init() {
   document.getElementById('sort-select').addEventListener('change', (e) => setSort(e.target.value));
   document.getElementById('clear-completed-btn').addEventListener('click', clearCompleted);
 
+  document.getElementById('export-btn').addEventListener('click', exportTodos);
+  document.getElementById('import-btn').addEventListener('click', () => importInput.click());
+  importInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) importTodos(file);
+    e.target.value = ''; // 같은 파일 재선택 허용
+  });
+
   // 전역 단축키
   document.addEventListener('keydown', (e) => {
     const tag       = document.activeElement.tagName;
     const isEditing = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
 
-    // '/' → 입력창 포커스 (입력 중에는 동작하지 않음)
     if (e.key === '/' && !isEditing) {
       e.preventDefault();
       inputEl.focus();
     }
 
-    // Ctrl+D → 다크 모드 전환 (브라우저 기본 동작인 북마크 차단)
     if (e.key === 'd' && e.ctrlKey) {
       e.preventDefault();
       toggleTheme();

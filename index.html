@@ -23,17 +23,17 @@
               aria-label="테마 전환" title="테마 전환 (Ctrl+D)"></button>
     </header>
 
-    <section class="dashboard">
+    <section class="dashboard" aria-label="진행률 대시보드">
       <div class="overall-progress">
         <div class="overall-progress-header">
           <span class="overall-label">전체 진행률</span>
           <div class="progress-meta">
             <span id="overall-count">0 / 0</span>
-            <span class="meta-sep">·</span>
+            <span class="meta-sep" aria-hidden="true">·</span>
             <strong id="overall-pct">0%</strong>
           </div>
         </div>
-        <div class="progress-track">
+        <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
           <div class="progress-fill" id="overall-bar"></div>
         </div>
       </div>
@@ -69,14 +69,15 @@
       </div>
     </section>
 
-    <section class="input-section">
+    <section class="input-section" aria-label="할 일 입력">
       <input
         type="text"
         id="todo-input"
         placeholder="새로운 할 일을 입력하세요…"
         autocomplete="off"
+        aria-label="할 일 입력"
       />
-      <select id="category-select">
+      <select id="category-select" aria-label="카테고리 선택">
         <option value="personal">개인</option>
         <option value="work">업무</option>
         <option value="study">공부</option>
@@ -85,15 +86,15 @@
     </section>
 
     <main>
-      <div class="filter-tabs" role="tablist">
-        <button class="filter-tab active" data-filter="all"      role="tab">전체</button>
-        <button class="filter-tab"        data-filter="work"     role="tab">업무</button>
-        <button class="filter-tab"        data-filter="personal" role="tab">개인</button>
-        <button class="filter-tab"        data-filter="study"    role="tab">공부</button>
+      <div class="filter-tabs" role="tablist" aria-label="카테고리 필터">
+        <button class="filter-tab active" data-filter="all"      role="tab" aria-selected="true">전체</button>
+        <button class="filter-tab"        data-filter="work"     role="tab" aria-selected="false">업무</button>
+        <button class="filter-tab"        data-filter="personal" role="tab" aria-selected="false">개인</button>
+        <button class="filter-tab"        data-filter="study"    role="tab" aria-selected="false">공부</button>
       </div>
 
       <div class="list-controls">
-        <span class="sort-label">정렬</span>
+        <label for="sort-select" class="sort-label">정렬</label>
         <select id="sort-select">
           <option value="newest">최신순</option>
           <option value="oldest">오래된순</option>
@@ -101,17 +102,23 @@
         </select>
       </div>
 
-      <ul id="todo-list"></ul>
-      <p id="empty-message" class="empty-message">등록된 할 일이 없습니다.</p>
+      <ul id="todo-list" aria-label="할 일 목록"></ul>
+      <p id="empty-message" class="empty-message" role="status">등록된 할 일이 없습니다.</p>
 
       <div class="list-footer">
+        <div class="data-btns">
+          <button id="export-btn" class="data-btn">내보내기</button>
+          <button id="import-btn" class="data-btn">가져오기</button>
+          <!-- 파일 선택은 JS에서 프로그래밍 방식으로 트리거 -->
+          <input type="file" id="import-input" accept=".json" hidden aria-hidden="true">
+        </div>
         <button id="clear-completed-btn" class="clear-completed-btn" disabled>
           완료 항목 삭제
         </button>
       </div>
     </main>
 
-    <footer class="shortcuts-hint">
+    <footer class="shortcuts-hint" aria-label="단축키 안내">
       <kbd>/</kbd> 입력창 포커스 &nbsp;·&nbsp; <kbd>Ctrl+D</kbd> 다크 모드 전환
     </footer>
 
