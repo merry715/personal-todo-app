@@ -4,13 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>할 일 관리</title>
+  <!-- 다크 모드 깜빡임(FOUC) 방지: 렌더 전에 테마 적용 -->
+  <script>
+    (function () {
+      var t = localStorage.getItem('theme');
+      document.documentElement.dataset.theme = (t === 'dark') ? 'dark' : 'light';
+    }());
+  </script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
+
     <header>
       <h1>할 일 관리</h1>
       <p id="today-date" class="today-date"></p>
+      <button id="theme-toggle" class="theme-toggle"
+              aria-label="테마 전환" title="테마 전환 (Ctrl+D)"></button>
     </header>
 
     <section class="dashboard">
@@ -82,9 +92,29 @@
         <button class="filter-tab"        data-filter="study"    role="tab">공부</button>
       </div>
 
+      <div class="list-controls">
+        <span class="sort-label">정렬</span>
+        <select id="sort-select">
+          <option value="newest">최신순</option>
+          <option value="oldest">오래된순</option>
+          <option value="incomplete">미완료 우선</option>
+        </select>
+      </div>
+
       <ul id="todo-list"></ul>
       <p id="empty-message" class="empty-message">등록된 할 일이 없습니다.</p>
+
+      <div class="list-footer">
+        <button id="clear-completed-btn" class="clear-completed-btn" disabled>
+          완료 항목 삭제
+        </button>
+      </div>
     </main>
+
+    <footer class="shortcuts-hint">
+      <kbd>/</kbd> 입력창 포커스 &nbsp;·&nbsp; <kbd>Ctrl+D</kbd> 다크 모드 전환
+    </footer>
+
   </div>
 
   <script src="script.js"></script>

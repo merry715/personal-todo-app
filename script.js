@@ -1,9 +1,9 @@
 const VALID_CATEGORIES = ['work', 'personal', 'study'];
 const CATEGORY_LABELS  = { work: '업무', personal: '개인', study: '공부' };
 
-/** 메모리 내 할 일 목록 */
 let todos         = [];
 let currentFilter = 'all';
+let currentSort   = 'newest'; // 'newest' | 'oldest' | 'incomplete'
 
 // 날짜를 'YYYY년 M월 D일 요일' 형식으로 반환
 function formatDate(date) {
@@ -11,34 +11,32 @@ function formatDate(date) {
   return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${days[date.getDay()]}`;
 }
 
-// 대시보드 진행률 갱신 — 필터와 무관하게 항상 전체 todos 기준
-function renderDashboard() {
-  const total      = todos.length;
-  const done       = todos.filter(t => t.completed).length;
-  const overallPct = total === 0 ? 0 : Math.round((done / total) * 100);
+// ── 테마 ─────────────────────────────────────────────────
 
-  document.getElementById('overall-count').textContent = `${done} / ${total}`;
-  document.getElementById('overall-pct').textContent   = `${overallPct}%`;
-  document.getElementById('overall-bar').style.width   = `${overallPct}%`;
-
-  VALID_CATEGORIES.forEach(cat => {
-    const catTodos = todos.filter(t => t.category === cat);
-    const catTotal  = catTodos.length;
-    const catDone   = catTodos.filter(t => t.completed).length;
-    const catPct    = catTotal === 0 ? 0 : Math.round((catDone / catTotal) * 100);
-
-    document.getElementById(`count-${cat}`).textContent = `${catDone} / ${catTotal}`;
-    document.getElementById(`bar-${cat}`).style.width   = `${catPct}%`;
-  });
+// 테마를 <html> 요소에 적용하고 localStorage에 저장
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem('theme', theme); } catch {}
 }
 
-// localStorage에서 할 일 목록 불러오기 (손상 시 빈 배열로 복구)
+function loadTheme() {
+  const saved = localStorage.getItem('theme');
+  applyTheme(saved === 'dark' ? 'dark' : 'light');
+}
+
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+}
+
+// ── localStorage ─────────────────────────────────────────
+
+// 할 일 목록 불러오기 (손상 시 빈 배열로 복구, category 정규화)
 function loadTodos() {
   try {
     const raw    = localStorage.getItem('todos');
     const parsed = raw ? JSON.parse(raw) : [];
     todos = Array.isArray(parsed) ? parsed : [];
-    // 유효하지 않은 category 값은 'personal'로 정규화
     todos = todos.map(todo => ({
       ...todo,
       category: VALID_CATEGORIES.includes(todo.category) ? todo.category : 'personal',
@@ -52,31 +50,75 @@ function loadTodos() {
 function saveTodos() {
   try {
     localStorage.setItem('todos', JSON.stringify(todos));
-  } catch {
-    // 저장 실패는 조용히 무시
+  } catch {}
+}
+
+// ── 정렬 ─────────────────────────────────────────────────
+
+// 현재 정렬 기준으로 배열 복사본을 반환 (원본 배열 불변)
+function getSorted(arr) {
+  const copy = [...arr];
+  switch (currentSort) {
+    case 'oldest':
+      return copy.sort((a, b) => Number(a.id) - Number(b.id));
+    case 'incomplete':
+      return copy.sort((a, b) => {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        return Number(b.id) - Number(a.id); // 같은 상태면 최신순
+      });
+    default: // 'newest'
+      return copy.sort((a, b) => Number(b.id) - Number(a.id));
   }
 }
 
-// 필터 탭 활성 상태 갱신 + 필터링된 목록 렌더링
+// ── 대시보드 ──────────────────────────────────────────────
+
+// 필터·정렬과 무관하게 항상 전체 todos 기준으로 계산
+function renderDashboard() {
+  const total      = todos.length;
+  const done       = todos.filter(t => t.completed).length;
+  const overallPct = total === 0 ? 0 : Math.round((done / total) * 100);
+
+  document.getElementById('overall-count').textContent = `${done} / ${total}`;
+  document.getElementById('overall-pct').textContent   = `${overallPct}%`;
+  document.getElementById('overall-bar').style.width   = `${overallPct}%`;
+
+  VALID_CATEGORIES.forEach(cat => {
+    const catTodos  = todos.filter(t => t.category === cat);
+    const catTotal  = catTodos.length;
+    const catDone   = catTodos.filter(t => t.completed).length;
+    const catPct    = catTotal === 0 ? 0 : Math.round((catDone / catTotal) * 100);
+
+    document.getElementById(`count-${cat}`).textContent = `${catDone} / ${catTotal}`;
+    document.getElementById(`bar-${cat}`).style.width   = `${catPct}%`;
+  });
+}
+
+// ── 렌더링 ───────────────────────────────────────────────
+
 function renderTodos() {
-  const list  = document.getElementById('todo-list');
-  const empty = document.getElementById('empty-message');
+  const list     = document.getElementById('todo-list');
+  const empty    = document.getElementById('empty-message');
+  const clearBtn = document.getElementById('clear-completed-btn');
 
   // 필터 탭 활성 상태 반영
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.filter === currentFilter);
   });
 
-  // 현재 필터에 맞는 항목만 추출
+  // 필터 적용 후 정렬
   const filtered = currentFilter === 'all'
     ? todos
     : todos.filter(t => t.category === currentFilter);
+  const sorted = getSorted(filtered);
 
   list.innerHTML = '';
-  renderDashboard(); // 필터·빈 목록 여부와 무관하게 항상 갱신
+  renderDashboard();
 
-  if (filtered.length === 0) {
-    // 전체 목록이 비어 있는 경우와 필터 결과가 없는 경우를 구분
+  // 완료 항목이 있을 때만 삭제 버튼 활성화 (필터와 무관하게 전체 기준)
+  clearBtn.disabled = !todos.some(t => t.completed);
+
+  if (sorted.length === 0) {
     empty.textContent = (currentFilter !== 'all' && todos.length > 0)
       ? '해당 카테고리의 할 일이 없습니다.'
       : '등록된 할 일이 없습니다.';
@@ -85,7 +127,7 @@ function renderTodos() {
   }
 
   empty.style.display = 'none';
-  filtered.forEach(todo => list.appendChild(createTodoElement(todo)));
+  sorted.forEach(todo => list.appendChild(createTodoElement(todo)));
 }
 
 // 단일 할 일 항목 DOM 요소 생성
@@ -142,7 +184,6 @@ function enterEditMode(li, todo, span) {
     if (e.key === 'Enter') {
       const newText = input.value.trim();
       if (newText) {
-        // todos 배열에서 해당 항목 텍스트 갱신
         const target = todos.find(t => t.id === todo.id);
         if (target) target.text = newText;
         saveTodos();
@@ -154,13 +195,14 @@ function enterEditMode(li, todo, span) {
   });
 
   // 포커스 이탈 시 수정 취소
-  // Enter/Esc로 이미 renderTodos()가 호출된 경우 input은 DOM에서 제거되므로 중복 실행되지 않음
+  // Enter/Esc로 이미 renderTodos()가 호출되면 input은 DOM에서 제거되므로 중복 실행되지 않음
   input.addEventListener('blur', () => {
     if (document.body.contains(input)) renderTodos();
   });
 }
 
-// 할 일 추가
+// ── 데이터 조작 ──────────────────────────────────────────
+
 function addTodo() {
   const inputEl  = document.getElementById('todo-input');
   const selectEl = document.getElementById('category-select');
@@ -182,7 +224,6 @@ function addTodo() {
   inputEl.focus();
 }
 
-// 완료/미완료 상태 전환
 function toggleTodo(id) {
   const todo = todos.find(t => t.id === id);
   if (todo) {
@@ -192,22 +233,35 @@ function toggleTodo(id) {
   }
 }
 
-// 할 일 삭제
 function deleteTodo(id) {
   todos = todos.filter(t => t.id !== id);
   saveTodos();
   renderTodos();
 }
 
-// 필터 변경
+// 완료 항목 일괄 삭제 (실행 전 확인)
+function clearCompleted() {
+  if (!confirm('완료된 항목을 모두 삭제할까요?')) return;
+  todos = todos.filter(t => !t.completed);
+  saveTodos();
+  renderTodos();
+}
+
 function setFilter(filter) {
   currentFilter = filter;
   renderTodos();
 }
 
-// 앱 초기화: 이벤트 등록 → 데이터 로드 → 렌더링
+function setSort(sort) {
+  currentSort = sort;
+  renderTodos();
+}
+
+// ── 초기화 ───────────────────────────────────────────────
+
 function init() {
   const inputEl = document.getElementById('todo-input');
+
   document.getElementById('add-btn').addEventListener('click', addTodo);
   inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') addTodo();
@@ -217,8 +271,31 @@ function init() {
     tab.addEventListener('click', () => setFilter(tab.dataset.filter));
   });
 
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  document.getElementById('sort-select').addEventListener('change', (e) => setSort(e.target.value));
+  document.getElementById('clear-completed-btn').addEventListener('click', clearCompleted);
+
+  // 전역 단축키
+  document.addEventListener('keydown', (e) => {
+    const tag       = document.activeElement.tagName;
+    const isEditing = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+
+    // '/' → 입력창 포커스 (입력 중에는 동작하지 않음)
+    if (e.key === '/' && !isEditing) {
+      e.preventDefault();
+      inputEl.focus();
+    }
+
+    // Ctrl+D → 다크 모드 전환 (브라우저 기본 동작인 북마크 차단)
+    if (e.key === 'd' && e.ctrlKey) {
+      e.preventDefault();
+      toggleTheme();
+    }
+  });
+
   document.getElementById('today-date').textContent = formatDate(new Date());
 
+  loadTheme();
   loadTodos();
   renderTodos();
 }
