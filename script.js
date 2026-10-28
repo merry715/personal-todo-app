@@ -1,9 +1,15 @@
 const VALID_CATEGORIES = ['work', 'personal', 'study'];
 const CATEGORY_LABELS  = { work: '업무', personal: '개인', study: '공부' };
+const CATEGORY_KEYWORDS = {
+  work:     ['회의', '보고서', '발표', '기획', '출장', '업무', '미팅', '프로젝트', '계약', '거래처', '고객', '팀장', '부서', '제안서', '견적', '마감', '스프린트', '이메일', '메일', '결재'],
+  study:    ['공부', '학습', '강의', '과제', '시험', '수업', '교재', '복습', '예습', '논문', '레포트', '독서', '책', '강좌', '자격증', '코딩', '프로그래밍', '알고리즘', '읽기', '문제풀이'],
+  personal: ['운동', '쇼핑', '병원', '약속', '친구', '가족', '여행', '취미', '요리', '청소', '장보기', '영화', '드라마', '헬스', '산책'],
+};
 
-let todos         = [];
-let currentFilter = 'all';
-let currentSort   = 'newest'; // 'newest' | 'oldest' | 'incomplete'
+let todos            = [];
+let currentFilter    = 'all';
+let currentSort      = 'newest'; // 'newest' | 'oldest' | 'incomplete'
+let isManualCategory = false;    // 사용자가 카테고리를 직접 변경했으면 true
 
 // ── 유틸리티 ─────────────────────────────────────────────
 
@@ -67,6 +73,31 @@ function getSorted(arr) {
       });
     default: // 'newest'
       return copy.sort((a, b) => Number(b.id) - Number(a.id));
+  }
+}
+
+// ── 자동 카테고리 분류 ────────────────────────────────────
+
+// 카테고리별 키워드 점수를 비교해 가장 많이 매칭된 카테고리 반환
+// 동점이거나 매칭 없으면 null 반환
+function autoDetectCategory(text) {
+  const scores = { work: 0, personal: 0, study: 0 };
+  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    scores[cat] = keywords.filter(kw => text.includes(kw)).length;
+  }
+  const max = Math.max(...Object.values(scores));
+  if (max === 0) return null;
+  const winners = Object.keys(scores).filter(k => scores[k] === max);
+  return winners.length === 1 ? winners[0] : null;
+}
+
+function setAutoHint(category) {
+  const hint = document.getElementById('auto-hint');
+  if (category) {
+    hint.textContent = `자동 분류: ${CATEGORY_LABELS[category]}`;
+    hint.hidden = false;
+  } else {
+    hint.hidden = true;
   }
 }
 
@@ -235,6 +266,8 @@ function addTodo() {
 
   inputEl.value = '';
   inputEl.focus();
+  isManualCategory = false;
+  setAutoHint(null);
 }
 
 function toggleTodo(id) {
@@ -330,10 +363,31 @@ function importTodos(file) {
 
 function init() {
   const inputEl     = document.getElementById('todo-input');
+  const selectEl    = document.getElementById('category-select');
   const importInput = document.getElementById('import-input');
 
   document.getElementById('add-btn').addEventListener('click', addTodo);
   inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') addTodo(); });
+
+  // 키워드 자동 분류: 입력 중 실시간 감지 (수동 변경 중에는 건너뜀)
+  inputEl.addEventListener('input', () => {
+    const text = inputEl.value;
+    if (text === '') {
+      isManualCategory = false;
+      setAutoHint(null);
+      return;
+    }
+    if (isManualCategory) return;
+    const detected = autoDetectCategory(text);
+    if (detected) selectEl.value = detected;
+    setAutoHint(detected);
+  });
+
+  // 사용자가 드롭다운을 직접 변경하면 자동 분류 일시 중단
+  selectEl.addEventListener('change', () => {
+    isManualCategory = true;
+    setAutoHint(null);
+  });
 
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.addEventListener('click', () => setFilter(tab.dataset.filter));

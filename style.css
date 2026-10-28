@@ -262,6 +262,14 @@ header h1 {
 
 #category-select:focus { border-color: var(--primary); }
 
+.auto-hint {
+  font-size: 0.75rem;
+  color: var(--primary);
+  padding: 0 4px;
+  margin-top: -6px;
+  margin-bottom: 6px;
+}
+
 #add-btn {
   height: 46px;
   padding: 0 22px;
