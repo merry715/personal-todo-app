@@ -1,0 +1,626 @@
+/* 기본 리셋 및 CSS 변수 */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── 라이트 모드 변수 ── */
+:root {
+  /* 브랜드 */
+  --primary:       #4f46e5;
+  --primary-hover: #4338ca;
+
+  /* 위험 액션 */
+  --danger:        #ef4444;
+
+  /* 텍스트 */
+  --text-main:     #111827;
+  --text-sub:      #6b7280;
+  --text-muted:    #9ca3af;
+
+  /* 레이아웃 */
+  --border:        #e5e7eb;
+  --bg:            #f3f4f6;
+  --card:          #ffffff;
+  --filter-bg:     #e4e5ed;
+
+  /* 카테고리 배지 */
+  --cat-work-bg:       #dbeafe;
+  --cat-work-text:     #1d4ed8;
+  --cat-personal-bg:   #dcfce7;
+  --cat-personal-text: #15803d;
+  --cat-study-bg:      #ffedd5;
+  --cat-study-text:    #c2410c;
+
+  /* 카테고리 진행률 막대 */
+  --cat-work-fill:     #3b82f6;
+  --cat-personal-fill: #22c55e;
+  --cat-study-fill:    #f97316;
+}
+
+/* ── 다크 모드 변수 재정의 ── */
+[data-theme="dark"] {
+  --primary:       #818cf8;
+  --primary-hover: #a5b4fc;
+
+  --danger:        #f87171;
+
+  --text-main:     #f9fafb;
+  --text-sub:      #9ca3af;
+  --text-muted:    #6b7280;
+
+  --border:        #374151;
+  --bg:            #111827;
+  --card:          #1f2937;
+  --filter-bg:     #374151;
+
+  --cat-work-bg:       #1e3a5f;
+  --cat-work-text:     #93c5fd;
+  --cat-personal-bg:   #14532d;
+  --cat-personal-text: #86efac;
+  --cat-study-bg:      #7c2d12;
+  --cat-study-text:    #fdba74;
+
+  --cat-work-fill:     #60a5fa;
+  --cat-personal-fill: #4ade80;
+  --cat-study-fill:    #fb923c;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text-main);
+  min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.2s ease;
+}
+
+/* ── 데스크톱 2단 그리드 레이아웃 ── */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 56px;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+/* ── 왼쪽 사이드바 ── */
+.sidebar {
+  position: sticky;
+  top: 48px;
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── 오른쪽 콘텐츠 패널 ── */
+.content {
+  min-width: 0;
+}
+
+/* ── 헤더 (사이드바 내, 왼쪽 정렬) ── */
+header {
+  position: relative;
+  text-align: left;
+}
+
+header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.today-date {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: var(--text-sub);
+}
+
+/* 테마 전환 버튼 */
+.theme-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--text-sub);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.theme-toggle:hover {
+  background: var(--filter-bg);
+  color: var(--text-main);
+  border-color: var(--text-muted);
+}
+
+:root:not([data-theme="dark"]) .theme-toggle::after { content: "☽"; }
+[data-theme="dark"]            .theme-toggle::after { content: "☀"; }
+
+/* ── 대시보드 카드 ── */
+.dashboard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: background-color 0.25s, border-color 0.2s;
+}
+
+.overall-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.overall-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.progress-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 0.8125rem;
+  color: var(--text-sub);
+}
+
+.progress-meta strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.meta-sep { color: var(--border); }
+
+.progress-track {
+  height: 8px;
+  background: var(--filter-bg);
+  border-radius: 99px;
+  overflow: hidden;
+  transition: background-color 0.25s;
+}
+
+.progress-track.mini {
+  height: 5px;
+  margin-top: 6px;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s;
+}
+
+#overall-bar   { background: var(--primary); }
+.work-fill     { background: var(--cat-work-fill); }
+.personal-fill { background: var(--cat-personal-fill); }
+.study-fill    { background: var(--cat-study-fill); }
+
+/* 사이드바에서는 카테고리 통계를 세로로 쌓음 */
+.category-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.category-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cat-name { font-size: 0.8125rem; font-weight: 600; }
+
+.cat-work-name     { color: var(--cat-work-text); }
+.cat-personal-name { color: var(--cat-personal-text); }
+.cat-study-name    { color: var(--cat-study-text); }
+
+.cat-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 입력 영역 ── */
+.input-section {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#todo-input {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 0 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  background: var(--card);
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.15s, background-color 0.25s, color 0.2s;
+}
+
+#todo-input:focus        { border-color: var(--primary); }
+#todo-input::placeholder { color: var(--text-muted); }
+
+#category-select {
+  height: 46px;
+  padding: 0 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.875rem;
+  background: var(--card);
+  color: var(--text-main);
+  cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background-color 0.25s, color 0.2s;
+}
+
+#category-select:focus { border-color: var(--primary); }
+
+.auto-hint {
+  font-size: 0.75rem;
+  color: var(--primary);
+  padding: 0 4px;
+  margin-top: -6px;
+  margin-bottom: 6px;
+}
+
+#add-btn {
+  height: 46px;
+  padding: 0 22px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+#add-btn:hover  { background: var(--primary-hover); }
+#add-btn:active { transform: scale(0.97); }
+
+/* ── 필터 탭 ── */
+.filter-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--filter-bg);
+  padding: 4px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  transition: background-color 0.25s;
+}
+
+.filter-tab {
+  flex: 1;
+  padding: 9px 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.filter-tab.active {
+  background: var(--card);
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.filter-tab:not(.active):hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ── 정렬 컨트롤 ── */
+.list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.sort-label {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+#sort-select {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  background: var(--card);
+  color: var(--text-sub);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, background-color 0.25s, color 0.2s;
+}
+
+#sort-select:focus { border-color: var(--primary); color: var(--text-main); }
+
+/* ── 할 일 목록 ── */
+#todo-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: box-shadow 0.15s, background-color 0.25s, border-color 0.2s;
+}
+
+.todo-item:hover { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07); }
+
+.todo-checkbox {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.category-badge {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background-color 0.25s, color 0.2s;
+}
+
+.cat-work     { background: var(--cat-work-bg);     color: var(--cat-work-text); }
+.cat-personal { background: var(--cat-personal-bg); color: var(--cat-personal-text); }
+.cat-study    { background: var(--cat-study-bg);    color: var(--cat-study-text); }
+
+.todo-item.completed .category-badge { opacity: 0.45; }
+
+.todo-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  word-break: break-word;
+  cursor: text;
+  border-radius: 4px;
+}
+
+.todo-text:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.todo-item.completed .todo-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.edit-input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1.5px solid var(--primary);
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  color: var(--text-main);
+  background: var(--card);
+  outline: none;
+}
+
+.delete-btn {
+  flex-shrink: 0;
+  padding: 5px 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.delete-btn:hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.empty-message {
+  display: none;
+  padding: 56px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+/* ── 목록 하단 ── */
+.list-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  gap: 8px;
+}
+
+.data-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.data-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.data-btn:hover {
+  background: var(--filter-bg);
+  color: var(--text-main);
+  border-color: var(--text-muted);
+}
+
+.clear-completed-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.clear-completed-btn:not(:disabled):hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.clear-completed-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── 단축키 안내 (사이드바 하단) ── */
+.shortcuts-hint {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: left;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  transition: border-color 0.25s, color 0.2s;
+}
+
+.shortcuts-hint kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--card);
+  font-size: 0.6875rem;
+  font-family: inherit;
+  color: var(--text-sub);
+  transition: background-color 0.25s, border-color 0.2s, color 0.2s;
+}
+
+/* ── 반응형: 900px 이하에서 단일 컬럼 ── */
+@media (max-width: 900px) {
+  .container {
+    grid-template-columns: 1fr;
+    padding: 28px 24px 60px;
+    gap: 20px;
+    min-height: unset;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  header {
+    text-align: center;
+  }
+
+  /* 태블릿에서는 카테고리 통계를 다시 3단으로 */
+  .category-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .shortcuts-hint {
+    text-align: center;
+  }
+}
+
+/* ── 반응형: 480px 이하 모바일 ── */
+@media (max-width: 480px) {
+  .container {
+    padding: 20px 12px 48px;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    padding-right: 44px;
+  }
+
+  #todo-input {
+    flex-basis: 100%;
+  }
+
+  #category-select {
+    flex: 1;
+  }
+
+  .input-section {
+    flex-wrap: wrap;
+  }
+
+  .list-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .data-btns { order: 2; }
+
+  .clear-completed-btn {
+    order: 1;
+    text-align: center;
+  }
+
+  .data-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .category-stats {
+    grid-template-columns: 1fr;
+  }
+}

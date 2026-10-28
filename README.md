@@ -37,11 +37,17 @@ git clone https://github.com/merry715/personal-todo-app.git
 ## 파일 구조
 
 ```
-├── index.html   HTML 구조, ARIA 접근성 속성
-├── style.css    CSS 변수(라이트/다크), 레이아웃, 반응형
-├── script.js    할 일 CRUD, 필터/정렬, 대시보드, 테마, 가져오기/내보내기
-├── README.md    프로젝트 문서
-└── CLAUDE.md    클로드 코드용 프로젝트 설명
+├── index.html                 HTML 구조, ARIA 접근성 속성
+├── style.css                  CSS 변수(라이트/다크), 레이아웃, 반응형
+├── script.js                  할 일 CRUD, 필터/정렬, 대시보드, 테마, 가져오기/내보내기
+├── screenshot.png             앱 스크린샷 (모바일 최적화 원본)
+├── todo-app-conversation.txt  Claude Code 전체 대화 기록
+├── README.md                  프로젝트 문서
+├── CLAUDE.md                  클로드 코드용 프로젝트 설명
+└── web_version/               데스크톱 최적화 버전
+    ├── index.html             2단 레이아웃 HTML (aside.sidebar + div.content)
+    ├── style.css              데스크톱 전용 CSS (Grid, sticky 사이드바, 반응형)
+    └── script.js             다크 모드 개선 반영
 ```
 
 ## 사용 기술
@@ -103,6 +109,38 @@ git clone https://github.com/merry715/personal-todo-app.git
 
 드롭다운을 직접 변경하면 자동 분류가 일시 중단됩니다. 입력창을 비우거나 할 일을 추가하면 다시 활성화됩니다.
 
+## 데스크톱 버전 (web_version)
+
+`web_version/` 폴더에는 데스크톱 전체 화면에 최적화된 버전이 있습니다. 원본과 동일한 기능을 제공하되 레이아웃과 다크 모드 동작을 개선했습니다.
+
+### 2단 레이아웃
+
+CSS Grid로 화면을 사이드바(300px)와 콘텐츠 패널(나머지)로 분리했습니다.
+
+| 영역 | 포함 요소 |
+|------|-----------|
+| 왼쪽 사이드바 | 제목, 날짜, 테마 버튼, 진행률 대시보드, 단축키 안내 |
+| 오른쪽 콘텐츠 | 할 일 입력, 필터 탭, 정렬, 목록, 내보내기/가져오기 |
+
+사이드바는 `position: sticky`로 고정되어 목록이 길어져도 항상 보입니다. 뷰포트 너비 900px 이하에서는 자동으로 단일 컬럼으로 전환됩니다.
+
+![원본 스크린샷 (모바일 최적화)](screenshot.png)
+
+### 다크 모드 개선
+
+원본 코드에서 발견된 두 가지 문제를 수정했습니다.
+
+| 문제 | 수정 내용 |
+|------|-----------|
+| CapsLock 시 `Ctrl+D` 단축키 미작동 | `e.key === 'd'` → `e.key.toLowerCase() === 'd'` |
+| 최초 방문 시 OS 다크 모드 설정 무시 | `localStorage` 저장값이 없을 때 `prefers-color-scheme` 미디어 쿼리로 OS 테마 자동 감지 |
+
+FOUC 방지 인라인 스크립트(`<head>`)도 동일하게 수정해 최초 방문 시 화면 깜빡임을 방지했습니다. **이 개선 사항은 원본(`script.js`, `index.html`)에도 동일하게 반영되었습니다.**
+
+### 대화 기록
+
+`todo-app-conversation.txt` — 이 프로젝트의 전체 Claude Code 대화 내역을 내보낸 파일입니다.
+
 ## 개발 과정
 
 클로드 웹에서 PRD와 단계별 프롬프트를 작성한 뒤, 클로드 코드로 아래 순서대로 구현했습니다.
@@ -113,3 +151,4 @@ git clone https://github.com/merry715/personal-todo-app.git
 - **Step 4** — 다크 모드 및 고급 기능: 테마 전환, 완료 항목 일괄 삭제, 정렬, 단축키
 - **Step 5** — 최종 완성 및 최적화: JSON 내보내기/가져오기, 반응형 레이아웃, 접근성 개선
 - **Step 6** — 자동 카테고리 분류: 키워드 점수 기반 실시간 감지, 수동 우선 원칙, 힌트 UI
+- **Step 7** — 데스크톱 버전 및 개선: `web_version` 2단 레이아웃(Grid + sticky 사이드바), 다크 모드 CapsLock·OS 자동 감지 수정

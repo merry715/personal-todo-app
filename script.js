@@ -26,7 +26,9 @@ function applyTheme(theme) {
 }
 
 function loadTheme() {
-  applyTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+  const saved     = localStorage.getItem('theme');
+  const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  applyTheme(saved ?? preferred);
 }
 
 function toggleTheme() {
@@ -415,7 +417,7 @@ function init() {
       inputEl.focus();
     }
 
-    if (e.key === 'd' && e.ctrlKey) {
+    if (e.key.toLowerCase() === 'd' && e.ctrlKey) {
       e.preventDefault();
       toggleTheme();
     }
